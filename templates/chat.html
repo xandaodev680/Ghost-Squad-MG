@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Chat Geral{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4 text-primary">Chat Geral - DeltaForce SaaS</h2>
+    <div class="card bg-dark text-light shadow-lg border-0">
+        <div class="card-body p-3" id="chat-box" style="height: 450px; overflow-y: auto; background: rgba(10,10,30,0.7); border-radius: 10px;">
+            <!-- Mensagens aparecem aqui -->
+        </div>
+        <div class="card-footer bg-transparent border-0">
+            <form id="chat-form">
+                <div class="input-group">
+                    <input type="text" id="message" class="form-control bg-secondary text-light border-0" placeholder="Digite sua mensagem..." autocomplete="off" required>
+                    <button type="submit" class="btn btn-primary">Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- SocketIO -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    socket.on('connect', () => {
+        console.log('Conectado ao chat!');
+    });
+
+    socket.on('message', (data) => {
+        const chatBox = document.getElementById('chat-box');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'mb-2 p-2 rounded';
+        msgDiv.style.background = data.username === '{{ session.username }}' ? 'rgba(0,255,234,0.2)' : 'rgba(255,0,255,0.2)';
+        msgDiv.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const msgInput = document.getElementById('message');
+        const msg = msgInput.value.trim();
+        if (msg) {
+            socket.emit('send_message', { msg: msg });
+            msgInput.value = '';
+        }
+    });
+</script>
+{% endblock %}

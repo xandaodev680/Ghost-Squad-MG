@@ -1,79 +1,124 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div class="text-center py-5">
-    <h1 class="display-4 fw-bold text-primary mb-4">Bem-vindo de volta, {{ user[0] }}!</h1>
-    <p class="lead text-muted mb-4">Seu email: {{ user[1] }}</p>
-    {% if user[2] %}
-        <img src="{{ url_for('uploaded_file', filename=user[2]) }}" 
-             alt="Foto de perfil" class="profile-img mb-4">
-    {% else %}
-        <p class="text-muted">Sem foto de perfil ainda.</p>
-    {% endif %}
-    <a href="{{ url_for('edit_profile') }}" class="btn btn-primary btn-lg m-2">Editar Perfil</a>
-    <a href="{{ url_for('post_bind') }}" class="btn btn-primary btn-lg m-2">Postar Bind</a>
-</div>
+<div class="container mt-5 pt-4">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary mb-3">Bem-vindo de volta, {{ user[0] }}!</h1>
+        <p class="lead text-muted mb-4">Seu email: {{ user[1] }}</p>
+        
+        {% if user[2] %}
+            <img src="{{ url_for('uploaded_file', filename=user[2]) }}" 
+                 alt="Foto de perfil" class="profile-img mb-4">
+        {% else %}
+            <div class="mb-4">
+                <i class="bi bi-person-circle display-1 text-muted"></i>
+                <p class="text-muted mt-2">Sem foto de perfil ainda.</p>
+            </div>
+        {% endif %}
+        
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('edit_profile') }}" class="btn btn-primary btn-lg px-5">Editar Perfil</a>
+            <a href="{{ url_for('post_bind') }}" class="btn btn-success btn-lg px-5">Postar Bind</a>
+            <a href="{{ url_for('chat') }}" class="btn btn-info btn-lg px-5">Abrir Chat</a>
+        </div>
+    </div>
 
-<!-- Pedidos de amizade pendentes -->
-<h3 class="text-center mt-5 fw-bold text-accent">Pedidos de Amizade Pendentes</h3>
-{% if pending_requests %}
-    <div class="row g-4">
-        {% for request in pending_requests %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-lg border-0">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">{{ request[0] }}</h5>
-                        <form method="POST" action="{{ url_for('accept_friend_request', from_user_id=request[2]) }}" class="d-inline">
-                            <button type="submit" class="btn btn-success m-1">Aceitar</button>
-                        </form>
-                        <form method="POST" action="{{ url_for('reject_friend_request', from_user_id=request[2]) }}" class="d-inline">
-                            <button type="submit" class="btn btn-danger m-1">Rejeitar</button>
-                        </form>
+    <!-- Pedidos de amizade pendentes -->
+    <h3 class="text-center mt-5 mb-4 fw-bold text-accent">Pedidos de Amizade Pendentes</h3>
+    {% if pending_requests %}
+        <div class="row g-4">
+            {% for request in pending_requests %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-lg border-0 text-center bg-dark text-light">
+                        <div class="card-body">
+                            {% if request[3] %}
+                                <img src="{{ url_for('uploaded_file', filename=request[3]) }}" 
+                                     alt="{{ request[0] }}" class="profile-img mb-3">
+                            {% else %}
+                                <i class="bi bi-person-circle display-1 mb-3 text-muted"></i>
+                            {% endif %}
+                            <h5 class="card-title">{{ request[0] }}</h5>
+                            <div class="d-flex justify-content-center gap-2 mt-3">
+                                <form method="POST" action="{{ url_for('accept_friend_request', from_user_id=request[2]) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-success btn-sm px-4">Aceitar</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('reject_friend_request', from_user_id=request[2]) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm px-4">Rejeitar</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <p class="text-center text-muted">Nenhum pedido pendente.</p>
-{% endif %}
-
-<!-- Suas binds -->
-<h3 class="text-center mt-5 fw-bold text-accent">Suas Binds</h3>
-<div class="row g-4">
-    {% for bind in my_binds %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-lg border-0">
-                <div class="card-header bg-primary text-white d-flex justify-content-between">
-                    <h5 class="mb-0">{{ bind[1] }}</h5>
-                    <small>{{ bind[5] }}</small>
-                </div>
-                <div class="card-body">
-                    {% if bind[3] %}
-                        <img src="{{ url_for('uploaded_bind_file', filename=bind[3]) }}" 
-                             alt="Foto da bind" class="img-fluid mb-3 rounded shadow">
-                    {% endif %}
-                    <pre class="bg-secondary p-3 rounded text-light" id="code-{{ bind[0] }}">{{ bind[2] }}</pre>
-                    <button class="btn btn-outline-light w-100 mt-3" onclick="copyCode('code-{{ bind[0] }}')">
-                        <i class="bi bi-clipboard me-2"></i>Copiar Código
-                    </button>
-                    <small class="d-block text-muted mt-2">Postado em: {{ bind[4] }}</small>
-                    <form method="POST" action="{{ url_for('delete_bind', bind_id=bind[0]) }}" class="mt-2">
-                        <button type="submit" class="btn btn-danger w-100">Deletar</button>
-                    </form>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     {% else %}
-        <p class="text-center text-muted">Você ainda não postou nenhuma bind.</p>
-    {% endfor %}
+        <p class="text-center text-muted">Nenhum pedido de amizade pendente no momento.</p>
+    {% endif %}
+
+    <!-- Seus amigos aceitos -->
+    <h3 class="text-center mt-5 mb-4 fw-bold text-accent">Seus Amigos</h3>
+    {% if friends %}
+        <div class="row g-4">
+            {% for friend in friends %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-lg border-0 text-center bg-dark text-light">
+                        <div class="card-body">
+                            {% if friend[2] %}
+                                <img src="{{ url_for('uploaded_file', filename=friend[2]) }}" 
+                                     alt="{{ friend[1] }}" class="profile-img mb-3">
+                            {% else %}
+                                <i class="bi bi-person-circle display-1 mb-3 text-muted"></i>
+                            {% endif %}
+                            <h5 class="card-title">{{ friend[1] }}</h5>
+                            <a href="{{ url_for('chat') }}" class="btn btn-outline-info btn-sm mt-2">Abrir Chat</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Você ainda não tem amigos aceitos. Envie pedidos para outros jogadores!</p>
+    {% endif %}
+
+    <!-- Suas binds -->
+    <h3 class="text-center mt-5 mb-4 fw-bold text-accent">Suas Binds Postadas</h3>
+    {% if my_binds %}
+        <div class="row g-4">
+            {% for bind in my_binds %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-lg border-0 bg-dark text-light">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ bind[1] }}</h5>
+                            <small>{{ bind[5] }}</small>
+                        </div>
+                        <div class="card-body">
+                            {% if bind[3] %}
+                                <img src="{{ url_for('uploaded_bind_file', filename=bind[3]) }}" 
+                                     alt="Foto da bind" class="img-fluid mb-3 rounded shadow">
+                            {% endif %}
+                            <pre class="bg-secondary p-3 rounded text-light mb-3" id="code-{{ bind[0] }}">{{ bind[2] }}</pre>
+                            <button class="btn btn-outline-light w-100 mb-2" onclick="copyCode('code-{{ bind[0] }}')">
+                                <i class="bi bi-clipboard me-2"></i>Copiar Código
+                            </button>
+                            <form method="POST" action="{{ url_for('delete_bind', bind_id=bind[0]) }}">
+                                <button type="submit" class="btn btn-danger w-100">Deletar Bind</button>
+                            </form>
+                            <small class="d-block text-muted mt-2">Postado em: {{ bind[4] }}</small>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Você ainda não postou nenhuma bind. Comece agora!</p>
+    {% endif %}
 </div>
 
 <script>
     function copyCode(id) {
         var code = document.getElementById(id).innerText;
         navigator.clipboard.writeText(code).then(function() {
-            alert('Código copiado!');
+            alert('Código copiado para a área de transferência!');
         }, function(err) {
             alert('Erro ao copiar: ' + err);
         });
