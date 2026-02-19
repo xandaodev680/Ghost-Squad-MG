@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Binds{% endblock %}
+{% block content %}
+<h2 class="text-center mt-4 mb-4 fw-bold text-primary">Binds Compartilhadas</h2>
+
+<!-- Barra de busca -->
+<form method="POST" class="mb-5">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control form-control-lg" placeholder="Pesquise por título, código ou categoria" value="{{ search_query }}">
+        <button type="submit" class="btn btn-primary btn-lg">Pesquisar</button>
+    </div>
+</form>
+
+<div class="row g-4">
+    {% for bind in binds_list %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between">
+                    <h5 class="mb-0">{{ bind[1] }}</h5>
+                    <small>Por {{ bind[5] }} | Categoria: {{ bind[6] }}</small>
+                </div>
+                <div class="card-body">
+                    {% if bind[3] %}
+                        <img src="{{ url_for('uploaded_bind_file', filename=bind[3]) }}" 
+                             alt="Foto da bind" class="img-fluid mb-3 rounded shadow">
+                    {% endif %}
+                    <pre class="bg-secondary p-3 rounded text-light" id="code-{{ bind[0] }}">{{ bind[2] }}</pre>
+                    <button class="btn btn-outline-light w-100 mt-3" onclick="copyCode('code-{{ bind[0] }}')">
+                        <i class="bi bi-clipboard me-2"></i>Copiar Código
+                    </button>
+                    <small class="d-block text-muted mt-2">Postado em: {{ bind[4] }}</small>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Nenhuma bind encontrada.</p>
+    {% endfor %}
+</div>
+
+<script>
+    function copyCode(id) {
+        var code = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(code).then(function() {
+            alert('Código copiado!');
+        }, function(err) {
+            alert('Erro ao copiar: ' + err);
+        });
+    }
+</script>
+{% endblock %}

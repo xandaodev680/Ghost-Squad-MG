@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold text-primary mb-4">Bem-vindo de volta, {{ user[0] }}!</h1>
+    <p class="lead text-muted mb-4">Seu email: {{ user[1] }}</p>
+    {% if user[2] %}
+        <img src="{{ url_for('uploaded_file', filename=user[2]) }}" 
+             alt="Foto de perfil" class="profile-img mb-4">
+    {% else %}
+        <p class="text-muted">Sem foto de perfil ainda.</p>
+    {% endif %}
+    <a href="{{ url_for('edit_profile') }}" class="btn btn-primary btn-lg m-2">Editar Perfil</a>
+    <a href="{{ url_for('post_bind') }}" class="btn btn-primary btn-lg m-2">Postar Bind</a>
+</div>
+
+<!-- Pedidos de amizade pendentes -->
+<h3 class="text-center mt-5 fw-bold text-accent">Pedidos de Amizade Pendentes</h3>
+{% if pending_requests %}
+    <div class="row g-4">
+        {% for request in pending_requests %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-lg border-0">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ request[0] }}</h5>
+                        <form method="POST" action="{{ url_for('accept_friend_request', from_user_id=request[2]) }}" class="d-inline">
+                            <button type="submit" class="btn btn-success m-1">Aceitar</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('reject_friend_request', from_user_id=request[2]) }}" class="d-inline">
+                            <button type="submit" class="btn btn-danger m-1">Rejeitar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-center text-muted">Nenhum pedido pendente.</p>
+{% endif %}
+
+<!-- Suas binds -->
+<h3 class="text-center mt-5 fw-bold text-accent">Suas Binds</h3>
+<div class="row g-4">
+    {% for bind in my_binds %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between">
+                    <h5 class="mb-0">{{ bind[1] }}</h5>
+                    <small>{{ bind[5] }}</small>
+                </div>
+                <div class="card-body">
+                    {% if bind[3] %}
+                        <img src="{{ url_for('uploaded_bind_file', filename=bind[3]) }}" 
+                             alt="Foto da bind" class="img-fluid mb-3 rounded shadow">
+                    {% endif %}
+                    <pre class="bg-secondary p-3 rounded text-light" id="code-{{ bind[0] }}">{{ bind[2] }}</pre>
+                    <button class="btn btn-outline-light w-100 mt-3" onclick="copyCode('code-{{ bind[0] }}')">
+                        <i class="bi bi-clipboard me-2"></i>Copiar Código
+                    </button>
+                    <small class="d-block text-muted mt-2">Postado em: {{ bind[4] }}</small>
+                    <form method="POST" action="{{ url_for('delete_bind', bind_id=bind[0]) }}" class="mt-2">
+                        <button type="submit" class="btn btn-danger w-100">Deletar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Você ainda não postou nenhuma bind.</p>
+    {% endfor %}
+</div>
+
+<script>
+    function copyCode(id) {
+        var code = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(code).then(function() {
+            alert('Código copiado!');
+        }, function(err) {
+            alert('Erro ao copiar: ' + err);
+        });
+    }
+</script>
+{% endblock %}

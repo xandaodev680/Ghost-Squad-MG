@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Pesquisar Usuários{% endblock %}
+{% block content %}
+<h2 class="text-center mt-4 mb-4 fw-bold text-primary">Pesquisar Usuários para Amizade</h2>
+<form method="POST" class="mb-5">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control form-control-lg" placeholder="Pesquise por nome de usuário" value="{{ search_query }}">
+        <button type="submit" class="btn btn-primary btn-lg">Pesquisar</button>
+    </div>
+</form>
+
+<div class="row g-4">
+    {% for user in users %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center">
+                    {% if user[2] %}
+                        <img src="{{ url_for('uploaded_file', filename=user[2]) }}" alt="Foto de {{ user[1] }}" class="profile-img mb-3">
+                    {% else %}
+                        <i class="bi bi-person-circle display-1 mb-3 text-muted"></i>
+                    {% endif %}
+                    <h5 class="card-title">{{ user[1] }}</h5>
+                    <form method="POST" action="{{ url_for('send_friend_request', to_user_id=user[0]) }}">
+                        <button type="submit" class="btn btn-primary w-100">Enviar Pedido de Amizade</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Nenhum usuário encontrado.</p>
+    {% endfor %}
+</div>
+{% endblock %}

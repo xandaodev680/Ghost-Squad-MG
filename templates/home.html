@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Ghost Squad MG{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold text-primary mb-4">Bem-vindo ao Ghost Squad MG</h1>
+    <p class="lead text-muted mb-5">O melhor lugar para armas, binds, rankings e configurações personalizadas.</p>
+
+    <div class="row justify-content-center g-4">
+        <!-- Card Armas -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow border-0 hover-shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-guns display-1 text-danger mb-3"></i>
+                    <h5 class="card-title">Armas</h5>
+                    <p class="card-text">Veja stats, skins e dicas das principais armas do jogo.</p>
+                    <a href="{{ url_for('armas') }}" class="btn btn-outline-danger">Explorar Armas</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Binds -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow border-0 hover-shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-keyboard display-1 text-success mb-3"></i>
+                    <h5 class="card-title">Binds</h5>
+                    <p class="card-text">Configurações rápidas de teclas para granadas, buys e mais.</p>
+                    <a href="{{ url_for('binds') }}" class="btn btn-outline-success">Ver Binds</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Ranker -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow border-0 hover-shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-trophy-fill display-1 text-warning mb-3"></i>
+                    <h5 class="card-title">Ranker</h5>
+                    <p class="card-text">Ranking global, pontos, ranks e leaderboard.</p>
+                    <a href="{{ url_for('ranker') }}" class="btn btn-outline-warning">Ver Ranking</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not session.username %}
+    <div class="mt-5">
+        <p class="lead">Faça login ou cadastre-se para salvar sua foto de perfil e configurações pessoais.</p>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg m-2">Cadastrar</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg m-2">Entrar</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .hover-shadow:hover {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+        transform: translateY(-5px);
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

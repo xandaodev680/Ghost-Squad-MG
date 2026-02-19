@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Postar Bind{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 bg-dark text-light">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0">Postar Nova Bind</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Título</label>
+                        <input type="text" name="titulo" class="form-control form-control-lg bg-secondary text-light border-0" required placeholder="Ex: Smoke para Mirage A">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Categoria</label>
+                        <select name="categoria" class="form-select form-select-lg bg-secondary text-light border-0" required>
+                            <option value="" disabled selected>Selecione uma categoria</option>
+                            <option value="Granadas">Granadas</option>
+                            <option value="Buys">Buys</option>
+                            <option value="Movimentação">Movimentação</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Código da Bind</label>
+                        <textarea name="codigo" class="form-control form-control-lg bg-secondary text-light border-0" rows="6" required placeholder="Ex: bind 'f' 'use weapon_flashbang';"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Foto (opcional)</label>
+                        <input type="file" name="foto" class="form-control form-control-lg bg-secondary text-light border-0" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg w-100">Postar Bind</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
