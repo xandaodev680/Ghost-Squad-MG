@@ -125,8 +125,11 @@ def post_bind():
         
         if 'foto' in request.files:
             file = request.files['foto']
-            if file and allowed_file(file.filename):
+            if file and file.filename != '' and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
+                # Garante nome único adicionando timestamp
+                base, ext = os.path.splitext(filename)
+                filename = f"{base}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
                 file.save(os.path.join(app.config['BIND_UPLOAD_FOLDER'], filename))
                 foto = filename
         

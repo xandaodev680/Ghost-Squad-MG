@@ -14,18 +14,20 @@
 <div class="row g-4">
     {% for bind in binds_list %}
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-lg border-0">
-                <div class="card-header bg-primary text-white d-flex justify-content-between">
+            <div class="card h-100 shadow-lg border-0 bg-dark text-light">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ bind[1] }}</h5>
-                    <small>Por {{ bind[5] }} | Categoria: {{ bind[6] }}</small>
+                    <small>Por {{ bind[5] }} | {{ bind[6] }}</small>
                 </div>
                 <div class="card-body">
                     {% if bind[3] %}
                         <img src="{{ url_for('uploaded_bind_file', filename=bind[3]) }}" 
-                             alt="Foto da bind" class="img-fluid mb-3 rounded shadow">
+                             alt="Foto da bind" class="img-fluid mb-3 rounded shadow" style="max-height: 200px; object-fit: cover;">
+                    {% else %}
+                        <p class="text-muted text-center">Sem foto nessa bind</p>
                     {% endif %}
-                    <pre class="bg-secondary p-3 rounded text-light" id="code-{{ bind[0] }}">{{ bind[2] }}</pre>
-                    <button class="btn btn-outline-light w-100 mt-3" onclick="copyCode('code-{{ bind[0] }}')">
+                    <pre class="bg-secondary p-3 rounded text-light mb-3" id="code-{{ bind[0] }}">{{ bind[2] }}</pre>
+                    <button class="btn btn-outline-light w-100 mb-2" onclick="copyCode('code-{{ bind[0] }}')">
                         <i class="bi bi-clipboard me-2"></i>Copiar Código
                     </button>
                     <small class="d-block text-muted mt-2">Postado em: {{ bind[4] }}</small>
