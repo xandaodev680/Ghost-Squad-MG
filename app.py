@@ -1,5 +1,3 @@
-import os
-from flask_socketio import SocketIO, emit
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
 from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -143,6 +141,177 @@ def post_bind():
     
     return render_template('post_bind.html')
 
+@app.route('/search_users', methods=['GET', 'POST'])
+def search_users():
+    search_query = request.form.get('search', '') if request.method == 'POST' else ''
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    if search_query:
+        c.execute("SELECT id, username, profile_photo FROM users WHERE username LIKE ? AND id != ?",
+                  (f'%{search_query}%', session.get('user_id', 0)))
+    else:
+        c.execute("SELECT id, username, profile_photo FROM users WHERE id != ?", (session.get('user_id', 0),))
+    users = c.fetchall()
+    conn.close()
+    return render_template('search_users.html', users=users, search_query=search_query)
+
+@app.route('/send_friend_request/<int:to_user_id>', methods=['POST'])
+def send_friend_request(to_user_id):
+    if 'user_id' not in session:
+        flash('Você precisa estar logado.', 'danger')
+        return redirect(url_for('login'))
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM friendships WHERE (from_user_id = ? AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = ?)",
+              (session['user_id'], to_user_id, to_user_id, session['user_id']))
+    if c.fetchone():
+        flash('Pedido de amizade já existe ou amizade aceita.', 'danger')
+    else:
+        c.execute("INSERT INTO friendships (from_user_id, to_user_id) VALUES (?, ?)",
+                  (session['user_id'], to_user_id))
+        conn.commit()
+        flash('Pedido de amizade enviado!', 'success')
+    conn.close()
+    return redirect(url_for('search_users'))
+
+@app.route('/accept_friend_request/<int:from_user_id>', methods=['POST'])
+def accept_friend_request(from_user_id):
+    if 'user_id' not in session:
+        flash('Você precisa estar logado.', 'danger')
+        return redirect(url_for('login'))
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("UPDATE friendships SET status = 'accepted' WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'",
+              (from_user_id, session['user_id']))
+    conn.commit()
+    flash('Amizade aceita!', 'success')
+    conn.close()
+    return redirect(url_for('dashboard'))
+
+@app.route('/reject_friend_request/<int:from_user_id>', methods=['POST'])
+def reject_friend_request(from_user_id):
+    if 'user_id' not in session:
+        flash('Você precisa estar logado.', 'danger')
+        return redirect(url_for('login'))
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("UPDATE friendships SET status = 'rejected' WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'",
+              (from_user_id, session['user_id']))
+    conn.commit()
+    flash('Pedido de amizade rejeitado.', 'info')
+    conn.close()
+    return redirect(url_for('dashboard'))
+
+@app.route('/ranker')
+def ranker():
+    rankings = [
+        {'posicao': 1, 'usuario': 'xandao gamer - 🥇', 'pontos': 1500, 'rank': 'Global Elite'},
+        {'posicao': 2, 'usuario': 'xandao gamer - 🥈', 'pontos': 1400, 'rank': 'Supreme'},
+        {'posicao': 3, 'usuario': 'xandao gamer - 🥉', 'pontos': 1200, 'rank': 'LEM'},
+    ]
+    return render_template('ranker.html', rankings=rankings)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = generate_password_hash(request.form['password'])
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        try:
+            c.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                      (username, email, password))
+            conn.commit()
+            flash('Cadastro feito! Faça login.', 'success')
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            flash('Usuário ou email já existe.', 'danger')
+        finally:
+            conn.close()
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = c.fetchone()
+        conn.close()
+        if user and check_password_hash(user[3], password):
+            session['user_id'] = user[0]
+            session['username'] = user[1]
+            flash('Login realizado!', 'success')
+            return redirect(url_for('dashboard'))
+        flash('Credenciais inválidas.', 'danger')
+    return render_template('login.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("SELECT username, email, profile_photo FROM users WHERE id = ?", (session['user_id'],))
+    user = c.fetchone()
+    c.execute('''SELECT binds.id, binds.titulo, binds.codigo, binds.foto, binds.data, binds.categoria
+                 FROM binds WHERE user_id = ? ORDER BY data DESC''', (session['user_id'],))
+    my_binds = c.fetchall()
+    c.execute('''SELECT u.username, f.id, f.from_user_id, u.profile_photo
+                 FROM friendships f JOIN users u ON f.from_user_id = u.id
+                 WHERE f.to_user_id = ? AND f.status = 'pending' ''', (session['user_id'],))
+    pending_requests = c.fetchall()
+    c.execute('''SELECT u.id, u.username, u.profile_photo
+                 FROM friendships f JOIN users u ON 
+                     (CASE WHEN f.from_user_id = ? THEN f.to_user_id ELSE f.from_user_id END) = u.id
+                 WHERE (f.from_user_id = ? OR f.to_user_id = ?) AND f.status = 'accepted' ''',
+              (session['user_id'], session['user_id'], session['user_id']))
+    friends = c.fetchall()
+    conn.close()
+    return render_template('dashboard.html', user=user, my_binds=my_binds, pending_requests=pending_requests, friends=friends)
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+def edit_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        profile_photo = None
+        if 'profile_photo' in request.files:
+            file = request.files['profile_photo']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                profile_photo = filename
+        query = "UPDATE users SET username = ?, email = ?"
+        params = [username, email]
+        if profile_photo:
+            query += ", profile_photo = ?"
+            params.append(profile_photo)
+        query += " WHERE id = ?"
+        params.append(session['user_id'])
+        c.execute(query, params)
+        conn.commit()
+        flash('Perfil atualizado com sucesso!', 'success')
+        return redirect(url_for('dashboard'))
+    c.execute("SELECT username, email, profile_photo FROM users WHERE id = ?", (session['user_id'],))
+    user = c.fetchone()
+    conn.close()
+    return render_template('edit_profile.html', user=user)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Você saiu.', 'info')
+    return redirect(url_for('home'))
+
+# Sistema de Chat em Tempo Real
 @app.route('/chat')
 def chat():
     if 'user_id' not in session:
@@ -165,39 +334,6 @@ def handle_message(data):
     msg = data['msg']
     username = session.get('username', 'Anônimo')
     emit('message', {'msg': msg, 'username': username}, broadcast=True)
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("SELECT username, email, profile_photo FROM users WHERE id = ?", (session['user_id'],))
-    user = c.fetchone()
-    
-    # Suas binds
-    c.execute('''SELECT binds.id, binds.titulo, binds.codigo, binds.foto, binds.data, binds.categoria
-                 FROM binds WHERE user_id = ? ORDER BY data DESC''', (session['user_id'],))
-    my_binds = c.fetchall()
-    
-    # Pedidos pendentes
-    c.execute('''SELECT u.username, f.id, f.from_user_id, u.profile_photo
-                 FROM friendships f JOIN users u ON f.from_user_id = u.id
-                 WHERE f.to_user_id = ? AND f.status = 'pending' ''', (session['user_id'],))
-    pending_requests = c.fetchall()
-    
-    # Amigos aceitos
-    c.execute('''SELECT u.id, u.username, u.profile_photo
-                 FROM friendships f JOIN users u ON 
-                     (CASE WHEN f.from_user_id = ? THEN f.to_user_id ELSE f.from_user_id END) = u.id
-                 WHERE (f.from_user_id = ? OR f.to_user_id = ?) AND f.status = 'accepted' ''',
-              (session['user_id'], session['user_id'], session['user_id']))
-    friends = c.fetchall()
-    
-    conn.close()
-    return render_template('dashboard.html', user=user, my_binds=my_binds, pending_requests=pending_requests, friends=friends)
-
-# Mantenha as outras rotas que você já tem (register, login, edit_profile, logout, search_users, send_friend_request, accept, reject, etc.)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
